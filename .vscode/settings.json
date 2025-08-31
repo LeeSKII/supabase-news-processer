@@ -1,0 +1,10 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe", // Windows
+  // 或者
+  // "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python", // macOS/Linux
+  "python.terminal.activateEnvironment": true,
+  "cSpell.words": [
+    "levelname",
+    "supabase"
+  ] // 推荐开启：终端自动激活虚拟环境
+}
