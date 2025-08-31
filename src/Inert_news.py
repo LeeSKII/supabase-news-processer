@@ -35,7 +35,7 @@ def map_json_to_db(json_data):
             "metadata": json.dumps(json_data.get("meta", {}), ensure_ascii=False) if json_data.get("meta") else None,
             "html": json_data.get("html"),
             "images": json_data.get("images", []),
-            "links": [],  # 需要从JSON中提取链接，暂时为空数组
+            "links": json_data.get("links", []),  # 直接获取独立的links字段
             "title": json_data.get("title"),
             "url": json_data.get("url"),
             "article": json_data.get("article"),
@@ -47,27 +47,6 @@ def map_json_to_db(json_data):
     except Exception as e:
         logger.error(f"映射JSON数据时出错: {str(e)}")
         raise
-
-def extract_links_from_json(json_data):
-    """从JSON数据中提取链接"""
-    try:
-        links = []
-        
-        # 从images中提取href链接
-        for image in json_data.get("images", []):
-            if "href" in image:
-                links.append({
-                    "href": image.get("href"),
-                    "text": image.get("text", ""),
-                    "title": image.get("title", ""),
-                    "rel": image.get("rel", "")
-                })
-        
-        logger.debug(f"提取到 {len(links)} 个链接")
-        return links
-    except Exception as e:
-        logger.error(f"提取链接时出错: {str(e)}")
-        return []
 
 def process_json_files(folder_path):
     """处理指定文件夹中的所有JSON文件"""
@@ -112,11 +91,6 @@ def process_json_files(folder_path):
                     logger.error(f"映射数据 {json_file} 时出错: {str(e)}")
                     error_count += 1
                     continue
-                
-                # 提取链接
-                links = extract_links_from_json(json_data)
-                if links:
-                    db_data["links"] = links
                 
                 # 插入数据库
                 try:
