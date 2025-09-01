@@ -47,7 +47,32 @@ class MetaArticle(BaseModel):
     published_date: Optional[str] = None
     tags: Optional[str] = None
 
-def get_news_records(limit=None):
+def get_waited_update_news():
+    """从数据库获取需要AI处理的新闻记录ID（summarizer或meta_filter为null或空）"""
+    try:
+        logger.info("开始获取需要AI处理的新闻记录ID")
+        
+        # 构建查询 - 只获取summarizer或meta_filter为null或空的记录ID
+        query = supabase.table("News").select("id").is_("summarizer", "null")
+        
+        # 执行查询
+        response = query.execute()
+        
+        if hasattr(response, 'error') and response.error:
+            logger.error(f"获取新闻记录ID时出错: {response.error}")
+            return []
+        
+        records = response.data
+        # 提取所有ID
+        ids = [record.get("id") for record in records if record.get("id")]
+        logger.info(f"成功获取 {len(ids)} 条需要AI处理的新闻记录ID")
+        return ids
+        
+    except Exception as e:
+        logger.error(f"获取新闻记录ID时发生错误: {str(e)}")
+        return []
+
+def get_news_records(record_ids=None):
     """从数据库获取需要AI处理的新闻记录"""
     try:
         logger.info("开始获取新闻记录")
@@ -55,9 +80,10 @@ def get_news_records(limit=None):
         # 构建查询
         query = supabase.table("News").select("id", "article", "text", "metadata")
         
-        # 如果提供了limit参数，限制返回的记录数
-        if limit:
-            query = query.limit(limit)
+        # 如果提供了record_ids参数，只获取指定ID的记录
+        if record_ids:
+            # 使用in操作符来查询多个ID
+            query = query.in_("id", record_ids)
         
         # 执行查询
         response = query.execute()
@@ -178,16 +204,25 @@ def update_ai_summary(record):
         logger.error(f"处理记录时发生错误: {str(e)}")
         return False
 
-def batch_update_ai_summary(limit=None):
+def batch_update_ai_summary():
     """批量更新新闻记录的AI摘要和元数据"""
     try:
         logger.info("开始批量更新AI摘要和元数据")
         
-        # 获取需要更新的记录
-        records = get_news_records(limit)
+        # 获取需要更新的记录ID
+        record_ids = get_waited_update_news()
+        
+        if not record_ids:
+            logger.warning("没有找到需要更新的记录")
+            return 0, 0
+        
+        logger.info(f"找到 {len(record_ids)} 条需要更新的记录ID")
+        
+        # 根据ID获取完整的记录信息
+        records = get_news_records(record_ids)
         
         if not records:
-            logger.warning("没有找到需要更新的记录")
+            logger.warning("没有找到对应的新闻记录")
             return 0, 0
         
         processed_count = 0
@@ -207,13 +242,13 @@ def batch_update_ai_summary(limit=None):
         logger.error(f"批量更新时发生错误: {str(e)}")
         return 0, 0
 
-def main(limit=None):
+def main():
     """主函数，协调整个AI处理流程"""
     try:
         logger.info("开始执行AI摘要和元数据处理脚本")
         
         # 执行批量更新
-        processed_count, error_count = batch_update_ai_summary(limit)
+        processed_count, error_count = batch_update_ai_summary()
         
         logger.info(f"脚本执行完成: 成功 {processed_count} 个, 失败 {error_count} 个")
         
@@ -225,6 +260,5 @@ def main(limit=None):
         logger.info("脚本执行结束")
 
 if __name__ == "__main__":
-    # 可以指定要处理的记录数量，None表示处理所有记录
-    # 例如：main(limit=1) 只处理第一条记录用于测试
-    main(limit=1)
+    # 进行全表查询，处理所有summarizer或meta_filter为null或空的记录
+    main()
