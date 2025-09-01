@@ -100,8 +100,8 @@ def guided_json_completion(client: OpenAI, model: str = model_name, input_prompt
 def ai_summarizer_completion(client: OpenAI, model: str = model_name, input_prompt: str = None):
     '''ai summarizer completion'''
     system_prompt = dedent("""你是一个专业的内容摘要专家。请为提供的内容生成一个简洁、准确的摘要。
-    摘要应该包含的主要观点、关键信息和重要细节。
-    使用中文回答。""")
+摘要应该包含的主要观点、关键信息和重要细节。
+使用中文回答。""")
     
     completion = client.chat.completions.create(
         model=model,
