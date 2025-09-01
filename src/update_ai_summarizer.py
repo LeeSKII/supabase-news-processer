@@ -125,7 +125,7 @@ def update_ai_summary(record):
         record_id = record.get("id")
         article = record.get("article")
         text = record.get("text")
-        meta = record.get("meta", {})
+        meta = record.get("metadata")
         
         if not record_id:
             logger.error("记录缺少ID字段")
@@ -141,7 +141,7 @@ def update_ai_summary(record):
             return False
         
         # 生成AI摘要
-        logger.info(f"开始为记录ID {record_id} 生成AI摘要")
+        logger.info(f"开始为记录ID {record_id} 生成AI摘要，输入数据：{content_to_process[:50]}")
         reasoning_summary, ai_summary = ai_summarizer_completion(client, model_name, content_to_process)
         logger.info(f"摘要化数据推理结果：{reasoning_summary}\n\n摘要化数据content结果：{ai_summary}")
         # 生成结构化元数据
