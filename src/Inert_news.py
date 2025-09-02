@@ -30,17 +30,33 @@ supabase: Client = create_client(url, key)
 def map_json_to_db(json_data):
     """将JSON数据映射到数据库表字段"""
     try:
+        # 获取article和text字段
+        article = json_data.get("article")
+        text = json_data.get("text")
+        
+        # 根据规则确定describe_text的值
+        if article and isinstance(article, str) and article.strip():
+            # 如果article存在，取前200个字符
+            describe_text = article[:200] if len(article) > 200 else article
+        elif text and isinstance(text, str) and text.strip():
+            # 如果article不存在，取text字段
+            describe_text = text
+        else:
+            # 如果两者都不存在，设置为None或空字符串
+            describe_text = None
+        
         db_data = {
-            "text": json_data.get("text"),
+            "text": text,
             "metadata": json.dumps(json_data.get("meta", {}), ensure_ascii=False) if json_data.get("meta") else None,
             "html": json_data.get("html"),
             "images": json_data.get("images", []),
             "links": json_data.get("links", []),  # 直接获取独立的links字段
             "title": json_data.get("title"),
             "url": json_data.get("url"),
-            "article": json_data.get("article"),
+            "article": article,
             "host": json_data.get("host"),
-            "word_count": json_data.get("wordCount")
+            "word_count": json_data.get("wordCount"),
+            "describe_text": describe_text
         }
         logger.debug(f"成功映射数据: {json_data.get('title', '无标题')}")
         return db_data
